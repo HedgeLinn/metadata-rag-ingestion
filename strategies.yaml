@@ -1,0 +1,158 @@
+# RAG-Pro — 策略配置
+
+chunkers:
+  fixed_1100:
+    type: langchain
+    class: langchain_text_splitters.RecursiveCharacterTextSplitter
+    params:
+      chunk_size: 1100
+      chunk_overlap: 0
+    description: "固定1100字切分，无重叠"
+
+  fixed_1100_ovl150:
+    type: langchain
+    class: langchain_text_splitters.RecursiveCharacterTextSplitter
+    params:
+      chunk_size: 1100
+      chunk_overlap: 150
+    description: "固定1100字切分，150字重叠"
+
+  fixed_1100_ovl150_pure:
+    type: langchain
+    class: langchain_text_splitters.RecursiveCharacterTextSplitter
+    params:
+      chunk_size: 1100
+      chunk_overlap: 150
+    description: "固定1100字切分，150字重叠（纯版，无元数据）"
+
+  fixed_1500:
+    type: langchain
+    class: langchain_text_splitters.RecursiveCharacterTextSplitter
+    params:
+      chunk_size: 1500
+      chunk_overlap: 0
+    description: "固定1500字切分，无重叠"
+
+  fixed_1500_ovl150:
+    type: langchain
+    class: langchain_text_splitters.RecursiveCharacterTextSplitter
+    params:
+      chunk_size: 1500
+      chunk_overlap: 150
+    description: "固定1500字切分，150字重叠"
+
+  token_1024:
+    type: langchain
+    class: langchain_text_splitters.TokenTextSplitter
+    params:
+      chunk_size: 1024
+      chunk_overlap: 0
+    description: "固定1024 token切分，无重叠"
+
+  token_1024_ovl100:
+    type: langchain
+    class: langchain_text_splitters.TokenTextSplitter
+    params:
+      chunk_size: 1024
+      chunk_overlap: 100
+    description: "固定1024 token切分，100 token重叠"
+
+  token_1536:
+    type: langchain
+    class: langchain_text_splitters.TokenTextSplitter
+    params:
+      chunk_size: 1536
+      chunk_overlap: 0
+    description: "固定1536 token切分，无重叠"
+
+  token_1536_ovl150:
+    type: langchain
+    class: langchain_text_splitters.TokenTextSplitter
+    params:
+      chunk_size: 1536
+      chunk_overlap: 150
+    description: "固定1536 token切分，150 token重叠"
+
+  header_aware_h6:
+    type: langchain
+    class: langchain_text_splitters.MarkdownHeaderTextSplitter
+    params:
+      headers_to_split_on:
+        - ["#", "h1"]
+        - ["##", "h2"]
+        - ["###", "h3"]
+        - ["####", "h4"]
+        - ["#####", "h5"]
+        - ["######", "h6"]
+      strip_headers: false
+    description: "Markdown标题树递归切分 (h1~h6)"
+
+  llm_index:
+    type: custom
+    class: core.custom_splitters.LLMIndexSplitter
+    params: {}
+    description: "段落切分 + 原文索引 + LLM生成3条索引，共4条索引指向原文"
+
+  parent_child_v1:
+    type: custom
+    class: core.custom_splitters.ParentChildSplitter
+    params:
+      parent_chunk_size: 1100
+      child_chunk_size: 150
+      parent_overlap: 0
+    description: "父块1100 + 句子子块150，embed子块返回父块"
+
+  parent_child_v2:
+    type: custom
+    class: core.custom_splitters.ParentChildSplitter
+    params:
+      parent_chunk_size: 1100
+      child_chunk_size: 150
+      parent_overlap: 150
+    description: "父块1100_ovl150 + 句子子块150，embed子块返回父块"
+
+retrievers:
+  vector:
+    type: langchain
+    class: langchain_core.retrievers.BaseRetriever
+    description: "纯向量检索（余弦相似度）"
+
+  bm25:
+    type: langchain
+    class: langchain_community.retrievers.BM25Retriever
+    description: "纯 BM25 关键词检索"
+
+  hybrid:
+    type: custom
+    class: pipeline.retrievers.WeightedFusionRetriever
+    params:
+      weights: [0.5, 0.5]
+    description: "向量 + BM25 加权混合检索"
+
+  hybrid_rrf:
+    type: custom
+    class: pipeline.retrievers.RRFFusionRetriever
+    params:
+      k: 60
+    description: "向量 + BM25 RRF 融合检索"
+
+rerankers:
+  direct:
+    type: custom
+    class: pipeline.compressors.NoOpCompressor
+    description: "直接返回检索结果，不做重排"
+
+  llm_rerank:
+    type: custom
+    class: pipeline.compressors.LLMRerankCompressor
+    params:
+      model: deepseek-chat
+    description: "LLM 对每个文档打分后重排序"
+
+  bge_reranker:
+    type: custom
+    class: pipeline.compressors.BGERerankCompressor
+    params:
+      model_name: BAAI/bge-reranker-v2-m3
+      top_n: 5
+    description: "BGE Cross-Encoder 重排模型"
